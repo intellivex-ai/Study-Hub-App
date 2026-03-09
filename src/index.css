@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Lexend', sans-serif;
+    @apply bg-bg-light text-slate-900;
+  }
+  .dark body {
+    @apply bg-bg-dark text-slate-100;
+  }
+}
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+  }
+}
+
+/* Flashcard flip animation */
+.card-flip-container {
+  perspective: 1000px;
+}
+.card-flip {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  position: relative;
+}
+.card-flip.flipped {
+  transform: rotateY(180deg);
+}
+.card-front,
+.card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.card-back {
+  transform: rotateY(180deg);
+  position: absolute;
+  inset: 0;
+}
+
+/* ── AI Chat bubble prose styles ─────────────────────────────────────────── */
+.prose-bubble .code-block {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  white-space: pre;
+}
+
+.prose-bubble .inline-code {
+  background: #f1f5f9;
+  color: #6366f1;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.dark .prose-bubble .inline-code {
+  background: #1e293b;
+  color: #a5b4fc;
+}
+
+.prose-bubble .bullet-list {
+  margin: 6px 0;
+  padding-left: 4px;
+  list-style: none;
+}
+
+.prose-bubble .bullet-list li {
+  position: relative;
+  padding-left: 16px;
+  margin: 4px 0;
+}
+
+.prose-bubble .bullet-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #6366f1;
+  font-size: 10px;
+  top: 2px;
+}
+
