@@ -1,16 +1,17 @@
 // src/pages/Notes.jsx — wired to Supabase via useNotes()
 import { askTutor } from '../services/aiService'
 import { createFlashcard } from '../services/flashcardsService'
+import { useState } from 'react'
+import { useNotes } from '../hooks/useNotes'
+import PageHeader from '../components/PageHeader'
 
-const renderMarkdown = (text) =>
-  text
-    .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-3 mb-1 text-slate-900 dark:text-slate-100">$1</h1>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-3 mb-1 text-slate-800 dark:text-slate-200">$2</h2>')
-    .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-2 mb-1 text-slate-700 dark:text-slate-300">$3</h3>')
-    .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-primary pl-4 italic text-slate-600 dark:text-slate-400 my-2">$1</blockquote>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold">$1</strong>')
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-slate-700 dark:text-slate-300">$1</li>')
-    .replace(/\n\n/g, '<br/>')
+
+import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import rehypeHighlight from 'rehype-highlight'
+import 'katex/dist/katex.min.css'
+import 'highlight.js/styles/github-dark.css'
 
 export default function Notes() {
   const [preview, setPreview] = useState(false)
@@ -126,18 +127,18 @@ export default function Notes() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto">
-          <div className="p-3 space-y-2 border-b border-slate-100 dark:border-slate-800">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+        <aside className="hidden md:flex flex-col w-72 glass-sidebar overflow-y-auto">
+          <div className="p-4 space-y-3 border-b border-slate-200/50 dark:border-slate-800/50">
+            <div className="relative group">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base group-focus-within:text-primary transition-colors">search</span>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search notes…"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary/50" />
+                className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-100/50 dark:bg-slate-800/50 border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium shadow-sm" />
             </div>
-            <button onClick={handleCreate} className="w-full flex items-center gap-2 bg-primary text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-primary-dark transition-colors">
-              <span className="material-symbols-outlined text-base">add</span>New Note
+            <button onClick={handleCreate} className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-indigo-500 to-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:-translate-y-0.5 shadow-glow premium-button transition-all">
+              <span className="material-symbols-outlined text-lg">add</span>New Note
             </button>
           </div>
-          <div className="flex-1 p-2 space-y-1 custom-scrollbar overflow-y-auto">
+          <div className="flex-1 p-3 space-y-1.5 custom-scrollbar overflow-y-auto">
             {loading && <div className="flex justify-center py-8"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}
             {!loading && notes.length === 0 && (
               <div className="text-center py-8 px-4">
@@ -148,7 +149,7 @@ export default function Notes() {
             )}
             {notes.map(note => (
               <div key={note.id} onClick={() => setActiveNoteId(note.id)}
-                className={`group w-full text-left p-3 rounded-lg transition-colors cursor-pointer ${activeNoteId === note.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                className={`group w-full text-left p-3 rounded-xl transition-all duration-300 cursor-pointer border ${activeNoteId === note.id ? 'bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 shadow-sm' : 'border-transparent hover:bg-slate-100/50 dark:hover:bg-slate-800/30'}`}>
                 <div className="flex items-start justify-between">
                   <p className={`font-semibold text-sm truncate flex-1 ${activeNoteId === note.id ? 'text-primary' : 'text-slate-800 dark:text-slate-200'}`}>
                     {note.is_pinned && <span className="material-symbols-outlined text-amber-500 text-sm mr-1" style={{ fontVariationSettings: "'FILL' 1" }}>push_pin</span>}
@@ -187,9 +188,9 @@ export default function Notes() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeNote ? (
             <>
-              <div className="px-6 pt-5 pb-2 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="px-8 pt-6 pb-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md">
                 <input value={activeNote.title} onChange={handleTitleChange}
-                  className="w-full text-xl font-bold bg-transparent outline-none text-slate-900 dark:text-slate-100 placeholder-slate-300" placeholder="Note title…" />
+                  className="w-full text-3xl font-extrabold tracking-tight bg-transparent outline-none text-slate-900 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-700 transition-colors focus:text-primary" placeholder="Note title…" />
               </div>
               {!preview && (
                 <div className="flex items-center gap-1 px-4 py-2 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto hide-scrollbar">
@@ -201,9 +202,13 @@ export default function Notes() {
                 </div>
               )}
               {preview
-                ? <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900" dangerouslySetInnerHTML={{ __html: renderMarkdown(activeNote.content || '') }} />
+                ? <div className="flex-1 p-8 overflow-y-auto custom-scrollbar bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm prose dark:prose-invert prose-p:leading-relaxed prose-headings:font-bold prose-pre:my-2 max-w-none break-words">
+                  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>
+                    {activeNote.content || ''}
+                  </ReactMarkdown>
+                </div>
                 : <textarea value={activeNote.content || ''} onChange={handleContentChange}
-                  className="flex-1 p-6 font-mono text-sm resize-none outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 custom-scrollbar" placeholder="Start writing in Markdown…" />
+                  className="flex-1 p-8 font-mono text-sm resize-none outline-none bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm text-slate-800 dark:text-slate-200 custom-scrollbar leading-relaxed" placeholder="Start writing in Markdown…" />
               }
               <div className="flex items-center justify-between px-4 py-1.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-400">
                 <span>{(activeNote.content || '').split('\n').length} lines · {(activeNote.content || '').length} chars</span>
@@ -213,14 +218,14 @@ export default function Notes() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 bg-white dark:bg-slate-900">
-              <span className="material-symbols-outlined text-slate-200 dark:text-slate-700 text-7xl">description</span>
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm">
+              <span className="material-symbols-outlined text-slate-200 dark:text-slate-700/50 text-8xl">description</span>
               <div>
-                <p className="font-semibold text-slate-600 dark:text-slate-400">No note selected</p>
-                <p className="text-sm text-slate-400">Create a new note or select one from the list.</p>
+                <p className="font-extrabold text-xl text-slate-800 dark:text-slate-200">No note selected</p>
+                <p className="text-sm font-medium text-slate-400 mt-1">Create a new note or select one from the list.</p>
               </div>
-              <button onClick={handleCreate} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition-colors">
-                <span className="material-symbols-outlined text-base">add</span>New Note
+              <button onClick={handleCreate} className="mt-4 flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-indigo-500 to-cyan-500 text-white rounded-2xl font-bold shadow-glow hover:-translate-y-1 transition-all premium-button">
+                <span className="material-symbols-outlined text-lg">add</span>New Note
               </button>
             </div>
           )}

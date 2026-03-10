@@ -21,11 +21,11 @@ export default function BottomNav() {
             >
               {({ isActive }) => (
                 <>
-                  <div className={`absolute -top-6 p-3 rounded-full shadow-lg border-4 border-white dark:border-bg-dark transition-colors ${isActive ? 'bg-primary-dark shadow-primary/40' : 'bg-primary shadow-primary/40'}`}>
+                  <div className={`absolute -top-6 p-4 rounded-3xl shadow-lg border border-white/10 transition-all duration-300 ${isActive ? 'bg-gradient-to-br from-indigo-500 to-cyan-500 shadow-glow -translate-y-2' : 'bg-slate-800 shadow-soft hover:-translate-y-1'}`}>
                     <span className="material-symbols-outlined text-white">smart_toy</span>
                   </div>
                   <div className="h-6" />
-                  <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500 dark:text-slate-400">
+                  <span className={`text-[10px] font-bold uppercase tracking-tighter ${isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>
                     {item.label}
                   </span>
                 </>
@@ -42,13 +42,18 @@ export default function BottomNav() {
             >
               {({ isActive }) => (
                 <>
-                  <span
-                    className="material-symbols-outlined"
-                    style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
-                  >
-                    {item.icon}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+                  <div className="relative flex flex-col items-center">
+                    <span
+                      className="material-symbols-outlined text-2xl transition-all duration-300"
+                      style={isActive ? { fontVariationSettings: "'FILL' 1", transform: 'scale(1.1)' } : {}}
+                    >
+                      {item.icon}
+                    </span>
+                    {isActive && (
+                      <div className="absolute -bottom-3 w-1.5 h-1.5 bg-indigo-500 rounded-full shadow-glow" />
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-tighter mt-1">{item.label}</span>
                 </>
               )}
             </NavLink>

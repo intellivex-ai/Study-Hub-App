@@ -8,14 +8,24 @@ import { logEvent, AnalyticsEvents } from './firebase'
 const toError = (err) => (err instanceof Error ? err : new Error(err?.message ?? 'Unknown error'))
 
 // ── Spaced Repetition ─────────────────────────────────────────────────────────
-// Simple SM-2-inspired intervals (days until next review):
-const INTERVALS = { easy: 7, medium: 3, hard: 1 }
+// SM-2-inspired tiered intervals: 1 day, 3 days, 7 days, 14 days, 30 days
+const TIERS = [1, 3, 7, 14, 30]
 
-const nextReviewDate = (difficulty) => {
-  const days = INTERVALS[difficulty] ?? 3
+const calculateNextReview = (timesReviewed = 0, difficulty = 'medium') => {
+  let step = timesReviewed
+
+  if (difficulty === 'hard') step = 0
+  else if (difficulty === 'easy') step += 2
+  else step += 1 // medium
+
+  // Cap the step to our max tier
+  step = Math.min(Math.max(step, 0), TIERS.length - 1)
+
+  const days = TIERS[step]
   const d = new Date()
   d.setDate(d.getDate() + days)
-  return d.toISOString()
+
+  return { next_review_at: d.toISOString(), new_times_reviewed: step }
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
@@ -90,7 +100,8 @@ export const createFlashcard = async ({
       front,
       back,
       difficulty,
-      next_review_at: nextReviewDate(difficulty),
+      next_review_at: calculateNextReview(0, difficulty).next_review_at,
+      times_reviewed: calculateNextReview(0, difficulty).new_times_reviewed
     })
     .select()
     .maybeSingle()
@@ -105,15 +116,19 @@ export const createFlashcard = async ({
  * @param {Array<{front, back, deckName?, subjectId?, difficulty?}>} cards
  */
 export const createFlashcardsBulk = async (userId, cards) => {
-  const rows = cards.map((c) => ({
-    user_id: userId,
-    subject_id: c.subjectId ?? null,
-    deck_name: c.deckName ?? 'My Deck',
-    front: c.front,
-    back: c.back,
-    difficulty: c.difficulty ?? 'medium',
-    next_review_at: nextReviewDate(c.difficulty ?? 'medium'),
-  }))
+  const rows = cards.map((c) => {
+    const { next_review_at, new_times_reviewed } = calculateNextReview(0, c.difficulty ?? 'medium');
+    return {
+      user_id: userId,
+      subject_id: c.subjectId ?? null,
+      deck_name: c.deckName ?? 'My Deck',
+      front: c.front,
+      back: c.back,
+      difficulty: c.difficulty ?? 'medium',
+      next_review_at,
+      times_reviewed: new_times_reviewed
+    }
+  })
 
   const { data, error } = await supabase
     .from('flashcards')
@@ -136,41 +151,21 @@ export const createFlashcardsBulk = async (userId, cards) => {
  *   await reviewFlashcard(card.id, 'easy')   // good recall → push back 7 days
  *   await reviewFlashcard(card.id, 'hard')   // poor recall → review tomorrow
  */
-export const reviewFlashcard = async (cardId, difficulty) => {
-  // Increment times_reviewed via rpc to avoid a separate SELECT
+export const reviewFlashcard = async (card, difficulty) => {
+  const { next_review_at, new_times_reviewed } = calculateNextReview(card.times_reviewed, difficulty)
+
   const { data, error } = await supabase
     .from('flashcards')
     .update({
       difficulty,
-      next_review_at: nextReviewDate(difficulty),
-      times_reviewed: supabase.rpc('increment', { row_id: cardId }), // see note below
+      next_review_at,
+      times_reviewed: new_times_reviewed,
     })
-    .eq('id', cardId)
+    .eq('id', card.id)
     .select()
     .maybeSingle()
 
-  // Fallback: manual increment if RPC not available
-  if (error) {
-    const { data: current } = await supabase
-      .from('flashcards')
-      .select('times_reviewed')
-      .eq('id', cardId)
-      .maybeSingle()
-
-    const { data: updated, error: e2 } = await supabase
-      .from('flashcards')
-      .update({
-        difficulty,
-        next_review_at: nextReviewDate(difficulty),
-        times_reviewed: (current?.times_reviewed ?? 0) + 1,
-      })
-      .eq('id', cardId)
-      .select()
-      .maybeSingle()
-    if (e2) throw toError(e2)
-    logEvent(AnalyticsEvents.FLASHCARD_REVIEWED, { difficulty })
-    return updated
-  }
+  if (error) throw toError(error)
 
   logEvent(AnalyticsEvents.FLASHCARD_REVIEWED, { difficulty })
   return data

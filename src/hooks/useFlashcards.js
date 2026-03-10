@@ -97,7 +97,7 @@ export function useFlashcards({ subjectId, deckName, dueOnly = false } = {}) {
    */
   const review = useCallback(async (difficulty) => {
     if (!currentCard) return
-    await reviewFlashcard(currentCard.id, difficulty)
+    await reviewFlashcard(currentCard, difficulty)
     setSessionResults((prev) => [...prev, { cardId: currentCard.id, difficulty }])
 
     if (currentIndex + 1 >= cards.length) {

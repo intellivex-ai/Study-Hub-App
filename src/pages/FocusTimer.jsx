@@ -1,4 +1,4 @@
-// src/pages/FocusTimer.jsx — Zen Mode with Premium Visuals
+// src/pages/FocusTimer.jsx — Zen Mode with Premium Visuals & App Blocker
 import { useState, useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import PageHeader from '../components/PageHeader'
@@ -20,6 +20,7 @@ export default function FocusTimer() {
   const [running, setRunning] = useState(false)
   const [sessions, setSessions] = useState(0)
   const [sessionId, setSessionId] = useState(null)
+  const [blockedWarning, setBlockedWarning] = useState(null)
 
   const containerRef = useRef(null)
   const intervalRef = useRef(null)
@@ -77,11 +78,38 @@ export default function FocusTimer() {
         sessionType: 'focus',
         durationMin: mode.duration / 60
       }).then(setSessionId)
+
+      // Start App Blocker if available
+      if (window.electronAPI) {
+        const savedApps = JSON.parse(localStorage.getItem('studyhub_blocked_apps') || '[]')
+        const appsToBlock = savedApps.length > 0 ? savedApps : ['discord.exe', 'steam.exe', 'Spotify.exe']
+        window.electronAPI.startAppBlocker(appsToBlock)
+          .then(() => console.log('App blocker started via Electron.'))
+          .catch(err => console.error('Failed to start app blocker:', err));
+
+        window.electronAPI.onAppBlockedWarning((appName) => {
+          setBlockedWarning(appName)
+          setTimeout(() => setBlockedWarning(null), 4000)
+        })
+      }
+    } else if (!running && mode.key === 'focus') {
+      // Pause App Blocker
+      if (window.electronAPI) {
+        window.electronAPI.stopAppBlocker()
+          .then(() => console.log('App blocker stopped via Electron.'))
+          .catch(err => console.error('Failed to stop app blocker:', err));
+      }
     }
   }, [running, sessionId, user, mode.key, subjectId])
 
   const handleTimerComplete = async () => {
     setRunning(false)
+
+    // Stop App Blocker
+    if (window.electronAPI) {
+      window.electronAPI.stopAppBlocker();
+    }
+
     // Play completion sound effect could go here
     if (mode.key === 'focus') {
       setSessions(s => s + 1)
@@ -103,6 +131,11 @@ export default function FocusTimer() {
     setModeIdx(idx)
     setTimeLeft(MODES[idx].duration)
     setRunning(false)
+
+    // Stop App Blocker if changing to break
+    if (window.electronAPI) {
+      window.electronAPI.stopAppBlocker();
+    }
   }
 
   const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0')
@@ -128,6 +161,14 @@ export default function FocusTimer() {
           <div ref={ringRef} className="relative w-80 h-80 flex items-center justify-center">
             {/* Background Glow */}
             <div className={`absolute inset-10 rounded-full blur-[60px] opacity-20 transition-colors duration-1000 ${modeIdx === 0 ? 'bg-primary' : modeIdx === 1 ? 'bg-emerald-500' : 'bg-purple-500'}`} />
+
+            {blockedWarning && (
+              <div className="absolute inset-0 z-50 bg-red-600/90 rounded-full flex flex-col items-center justify-center animate-pulse shadow-[0_0_100px_rgba(220,38,38,0.8)] backdrop-blur-sm">
+                <span className="material-symbols-outlined text-white text-5xl mb-2">warning</span>
+                <p className="text-white font-black text-xl tracking-widest text-center px-4">DISTRACTION<br />DETECTED</p>
+                <p className="text-red-200 font-bold text-xs mt-2 uppercase">{blockedWarning}</p>
+              </div>
+            )}
 
             <svg className="w-full h-full -rotate-90 drop-shadow-2xl" viewBox="0 0 240 240">
               <circle cx="120" cy="120" r="110" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-100 dark:text-slate-800" />

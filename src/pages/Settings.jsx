@@ -1,5 +1,6 @@
 // src/pages/Settings.jsx — Settings Pro with Real-time Sync & Security
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
@@ -166,6 +167,23 @@ export default function Settings() {
 
         {/* Sidebar: Security & Appearance */}
         <div className="space-y-6">
+          <section className="glass-card p-6 rounded-[2rem]">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 px-1">Focus Tool</h3>
+            <Link
+              to="/app-blocker"
+              className="w-full flex items-center justify-between p-4 rounded-2xl bg-primary/5 hover:bg-primary/10 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-900/20 shadow-sm flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined">block</span>
+                </div>
+                <div className="text-left font-black tracking-widest uppercase text-[10px] text-slate-600 dark:text-slate-400 leading-none">
+                  App Blocker
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-slate-300">chevron_right</span>
+            </Link>
+          </section>
           <section className="glass-card p-6 rounded-[2rem]">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 px-1">Security</h3>
             <form onSubmit={handlePasswordUpdate} className="space-y-4">

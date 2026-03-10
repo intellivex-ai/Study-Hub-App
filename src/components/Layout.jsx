@@ -9,10 +9,10 @@ export default function Layout() {
   const mainRef = useRef(null)
 
   useEffect(() => {
-    // Fade in/up every time the location changes
+    // Premium fade in/up with blur every time the location changes
     gsap.fromTo(mainRef.current,
-      { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+      { opacity: 0, y: 12, filter: 'blur(4px)' },
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.4, ease: 'power2.out' }
     )
     window.scrollTo(0, 0)
   }, [location.pathname])

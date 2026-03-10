@@ -40,6 +40,10 @@ create table public.users (
   streak              integer     not null default 0,
   last_active         date,
   total_study_minutes integer     not null default 0,
+  xp                  integer     not null default 0,
+  level               integer     not null default 1,
+  badges              jsonb       not null default '[]'::jsonb,
+  blocked_apps        text[]      not null default '{}',
   fcm_token           text,
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now()
@@ -268,6 +272,28 @@ returns void language plpgsql security definer as $$
 begin
   update public.users
   set total_study_minutes = total_study_minutes + p_minutes
+  where id = p_user_id;
+end;
+$$;
+
+-- Called by studyService._addXP to handle XP and level up safely
+create function public.add_user_xp(p_user_id uuid, p_xp_amount integer)
+returns void language plpgsql security definer as $$
+begin
+  update public.users
+  set 
+    xp = xp + p_xp_amount,
+    level = floor((xp + p_xp_amount) / 1000) + 1
+  where id = p_user_id;
+end;
+$$;
+
+-- Called by studyService.updateBlockedApps to save blocklist in Supabase
+create function public.update_blocked_apps(p_user_id uuid, p_apps text[])
+returns void language plpgsql security definer as $$
+begin
+  update public.users
+  set blocked_apps = p_apps
   where id = p_user_id;
 end;
 $$;

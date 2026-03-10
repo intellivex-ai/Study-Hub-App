@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar'
 import { useAuth } from '../hooks/useAuth'
 import { useSubjects } from '../hooks/useSubjects'
 import { getWeeklySummary } from '../services/studyService'
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 // Resolve a bar color from a hex
 function barClass(hex = '#2563EB') {
@@ -170,29 +171,39 @@ export default function Analytics() {
             </div>
           </section>
 
-          {/* Mastery Heatmap */}
+          {/* Subject Mastery Radar */}
           <section className="glass-card p-8 rounded-3xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">grid_view</span>
-                Mastery Heatmap
+                <span className="material-symbols-outlined text-primary">radar</span>
+                Subject Mastery
               </h3>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map(i => <div key={i} className="w-3 h-3 rounded-sm bg-primary" style={{ opacity: i * 0.25 }} />)}
+            </div>
+            {subjects.length > 0 ? (
+              <div className="h-72 w-full mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={subjects}>
+                    <PolarGrid stroke="#334155" strokeDasharray="3 3" />
+                    <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} stroke="#334155" />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', color: '#f8fafc' }}
+                      itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
+                    />
+                    <Radar
+                      name="Progress %"
+                      dataKey="progress"
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      fill="#3b82f6"
+                      fillOpacity={0.4}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-            <div className="grid grid-cols-7 sm:grid-cols-14 md:grid-cols-21 gap-2">
-              {Array.from({ length: 84 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`aspect-square rounded-[4px] transition-all hover:scale-125 cursor-help ${Math.random() > 0.7 ? 'bg-primary' : Math.random() > 0.4 ? 'bg-primary/40' : 'bg-slate-100 dark:bg-slate-800'
-                    }`}
-                  style={{ opacity: Math.random() > 0.5 ? 1 : 0.4 }}
-                  title={`Activity on day ${i}`}
-                />
-              ))}
-            </div>
-            <p className="mt-6 text-xs text-slate-400 font-medium text-center">Consistency is key to long-term memory. Keep your streak alive!</p>
+            ) : (
+              <p className="mt-6 text-xs text-slate-400 font-medium text-center">Add subjects to see your mastery radar!</p>
+            )}
           </section>
         </div>
 

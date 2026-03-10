@@ -59,7 +59,14 @@ export const endSession = async ({ sessionId, userId, actualMin, completed = tru
 
   // Update cumulative study minutes on the user profile
   await _incrementStudyMinutes(userId, actualMin)
-  if (completed) await _updateStreak(userId, now)
+  if (completed) {
+    await _updateStreak(userId, now)
+    // Reward XP (e.g. 10 XP per minute focused)
+    const earnedXP = actualMin * 10
+    if (earnedXP > 0) {
+      await _addXP(userId, earnedXP)
+    }
+  }
 
   logEvent(AnalyticsEvents.FOCUS_SESSION_END, { actual_min: actualMin, completed })
 }
@@ -153,6 +160,13 @@ async function _incrementStudyMinutes(userId, minutes) {
   })
 }
 
+async function _addXP(userId, xpAmount) {
+  await supabase.rpc('add_user_xp', {
+    p_user_id: userId,
+    p_xp_amount: xpAmount,
+  })
+}
+
 async function _updateStreak(userId, now = new Date()) {
   const today = now.toISOString().split('T')[0]
   const yesterday = new Date(now)
@@ -176,4 +190,26 @@ async function _updateStreak(userId, now = new Date()) {
     .from('users')
     .update({ streak: newStreak, last_active: today })
     .eq('id', userId)
+}
+
+// ── Blocker Persistence ───────────────────────────────────────────────────────
+
+/** Get the list of blocked application names for a user. */
+export const getBlockedApps = async (userId) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('blocked_apps')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) throw toError(error)
+  return data?.blocked_apps ?? []
+}
+
+/** Sync the blocked application names to Supabase. */
+export const updateBlockedApps = async (userId, apps) => {
+  const { error } = await supabase.rpc('update_blocked_apps', {
+    p_user_id: userId,
+    p_apps: apps
+  })
+  if (error) throw toError(error)
 }
