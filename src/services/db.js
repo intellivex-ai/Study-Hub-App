@@ -10,10 +10,11 @@ export const db = new Dexie('StudyHubLocalDB')
 // Note: We only index fields that we plan to query against.
 // _sync_status can be: 'synced', 'created', 'updated', 'deleted'
 db.version(1).stores({
-    notes: 'id, user_id, subject_id, _sync_status, updated_at',
-    flashcards: 'id, user_id, subject_id, next_review_at, _sync_status, updated_at',
-    mindmaps: 'id, user_id, subject_id, _sync_status, updated_at',
-    sync_state: 'key' // To store last_sync_timestamp, etc.
+    notes: 'id, subject_id, user_id, updated_at',
+    flashcards: 'id, subject_id, next_review_at',
+    study_plans: 'id, target_exam',
+    weak_topics: 'id, subject, weakness_score',
+    sync_queue: '++id, action, table, payload'
 })
 
 // Lifecycle hooks to auto-manage timestamps

@@ -2,6 +2,8 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider, RequireAuth } from './hooks/useAuth'
+import LoadingScreen from './components/LoadingScreen'
+import { useState } from 'react'
 
 const Layout = lazy(() => import('./components/Layout'))
 const Landing = lazy(() => import('./pages/Landing'))
@@ -31,6 +33,12 @@ const LoadingFallback = () => (
 )
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  if (showSplash) {
+    return <LoadingScreen onComplete={() => setShowSplash(false)} />
+  }
+
   return (
     <AuthProvider>
       <Suspense fallback={<LoadingFallback />}>
