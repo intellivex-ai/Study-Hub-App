@@ -26,7 +26,7 @@ export const createSubject = async ({ userId, name, icon = 'book', colorHex = '#
         .from('subjects')
         .insert({ user_id: userId, name, icon, color_hex: colorHex, chapters })
         .select()
-        .single()
+        .maybeSingle()
     if (error) throw toError(error)
     return data
 }
@@ -39,7 +39,7 @@ export const updateSubject = async (subjectId, updates) => {
         .update(updates)
         .eq('id', subjectId)
         .select()
-        .single()
+        .maybeSingle()
     if (error) throw toError(error)
     return data
 }
@@ -79,7 +79,7 @@ export const getUserStats = async (userId) => {
         .from('users')
         .select('full_name, avatar_url, grade, streak, total_study_minutes, last_active')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
     if (error) throw toError(error)
     return data
 }

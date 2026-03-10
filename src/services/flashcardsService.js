@@ -93,7 +93,7 @@ export const createFlashcard = async ({
       next_review_at: nextReviewDate(difficulty),
     })
     .select()
-    .single()
+    .maybeSingle()
   if (error) throw toError(error)
   return data
 }
@@ -147,7 +147,7 @@ export const reviewFlashcard = async (cardId, difficulty) => {
     })
     .eq('id', cardId)
     .select()
-    .single()
+    .maybeSingle()
 
   // Fallback: manual increment if RPC not available
   if (error) {
@@ -155,7 +155,7 @@ export const reviewFlashcard = async (cardId, difficulty) => {
       .from('flashcards')
       .select('times_reviewed')
       .eq('id', cardId)
-      .single()
+      .maybeSingle()
 
     const { data: updated, error: e2 } = await supabase
       .from('flashcards')
@@ -166,7 +166,7 @@ export const reviewFlashcard = async (cardId, difficulty) => {
       })
       .eq('id', cardId)
       .select()
-      .single()
+      .maybeSingle()
     if (e2) throw toError(e2)
     logEvent(AnalyticsEvents.FLASHCARD_REVIEWED, { difficulty })
     return updated
@@ -185,7 +185,7 @@ export const updateFlashcard = async (cardId, updates) => {
     .update(updates)
     .eq('id', cardId)
     .select()
-    .single()
+    .maybeSingle()
   if (error) throw toError(error)
   return data
 }

@@ -10,8 +10,8 @@ const navItems = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-bg-dark/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-2 z-50">
-      <div className="max-w-xl mx-auto flex justify-between items-center">
+    <nav className="fixed bottom-4 left-4 right-4 h-16 glass-card rounded-2xl px-2 py-2 z-50 flex items-center">
+      <div className="max-w-xl mx-auto flex justify-between items-center w-full">
         {navItems.map(item =>
           item.center ? (
             <NavLink
@@ -36,8 +36,7 @@ export default function BottomNav() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 w-1/5 py-1 transition-colors ${
-                  isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-400'
+                `flex flex-col items-center justify-center gap-1 w-1/5 py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-400'
                 }`
               }
             >

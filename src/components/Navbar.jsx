@@ -2,10 +2,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useTheme } from '../hooks/useTheme'
 
 export default function Navbar() {
   const [search, setSearch] = useState('')
   const { user, profile } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   // Build avatar: prefer profile avatar_url, else gravatar-style initial from email
   const avatarUrl = profile?.avatar_url ?? null
@@ -14,13 +16,19 @@ export default function Navbar() {
     ? displayName.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2)
     : '?'
 
+  const themeIcons = {
+    light: 'light_mode',
+    dark: 'dark_mode',
+    pookie: 'favorite'
+  }
+
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-bg-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 h-16 flex items-center justify-between">
-      <Link to="/dashboard" className="flex items-center gap-2">
-        <div className="bg-primary p-1.5 rounded-lg flex items-center justify-center">
+    <nav className="sticky top-0 z-50 glass-nav px-4 h-16 flex items-center justify-between">
+      <Link to="/dashboard" className="flex items-center gap-2 group">
+        <div className="bg-primary p-1.5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
           <span className="material-symbols-outlined text-white text-2xl">auto_stories</span>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-primary">StudyHub</h1>
+        <h1 className="text-xl font-bold tracking-tight text-primary text-glow">StudyHub</h1>
       </Link>
 
       <div className="hidden md:flex flex-1 max-w-md mx-8">
@@ -37,6 +45,16 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-3">
+        <button
+          onClick={toggleTheme}
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 transition-all active:scale-90"
+          title={`Switch Theme (Current: ${theme})`}
+        >
+          <span className={`material-symbols-outlined ${theme === 'pookie' ? 'text-pink-500' : ''}`}>
+            {themeIcons[theme]}
+          </span>
+        </button>
+
         <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 relative">
           <span className="material-symbols-outlined">notifications</span>
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-bg-dark" />

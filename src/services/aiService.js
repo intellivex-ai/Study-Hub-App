@@ -7,55 +7,37 @@ import { supabase } from './supabaseClient'
 
 
 // ── NVIDIA NIM API config ─────────────────────────────────────────────────────
-const NVIDIA_API_KEY = import.meta.env.VITE_NVIDIA_API_KEY
-// In dev: use Vite proxy (/nvidia-api) to avoid CORS.
-// In production: set VITE_NVIDIA_BASE_URL to your backend URL.
-const NVIDIA_BASE_URL = import.meta.env.VITE_NVIDIA_BASE_URL ?? '/nvidia-api/v1'
-const NVIDIA_MODEL = 'meta/llama-3.1-70b-instruct' // Change to any NIM model you prefer
-
-const SYSTEM_PROMPT = `You are an expert AI Study Tutor helping a student preparing for competitive exams (JEE, NEET, etc.).
-You explain concepts clearly, generate quizzes with answers, create flashcards, and summarize notes.
-Use simple language, bullet points, and examples. Format your responses using markdown:
-- **bold** for key terms
-- \`code\` for formulas or code
-- Bullet points for lists
-Keep responses concise but thorough.`
+// Migrated to Supabase Edge Function to protect API keys.
+// The Edge function `ai-tutor` now securely handles the prompt and API call.
 
 // ── Core API call ─────────────────────────────────────────────────────────────
 /**
- * Send a message to the NVIDIA NIM AI tutor.
+ * Send a message to the NVIDIA NIM AI tutor via Supabase Edge Function.
  * @param {string} message - The user's message text.
+ * @param {Object} [options] - Optional config { context, systemPrompt, signal }
  * @returns {Promise<string>} - The AI's reply text.
  */
-export async function askTutor(message) {
-    if (!NVIDIA_API_KEY || NVIDIA_API_KEY === 'nvapi-your-key-here') {
-        throw new Error('NVIDIA API key not set. Add VITE_NVIDIA_API_KEY to your .env file.')
-    }
+export async function askTutor(message, options = {}) {
+    const { context, systemPrompt, signal } = options
 
-    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${NVIDIA_API_KEY}`,
+    // We securely call our edge function instead of hitting NVIDIA directly
+    const { data, error } = await supabase.functions.invoke('ai-tutor', {
+        body: {
+            message,
+            context,
+            systemPrompt
         },
-        body: JSON.stringify({
-            model: NVIDIA_MODEL,
-            messages: [
-                { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: message },
-            ],
-            temperature: 0.7,
-            max_tokens: 1024,
-        }),
     })
 
-    if (!response.ok) {
-        const err = await response.text()
-        throw new Error(`NVIDIA API error (${response.status}): ${err}`)
+    if (error) {
+        throw new Error(`AI error: ${error.message || 'Unknown error returning from Edge Function'}`)
     }
 
-    const data = await response.json()
-    return data.choices?.[0]?.message?.content ?? 'No response from AI.'
+    if (data?.error) {
+        throw new Error(`Edge Function Error: ${data.error}`)
+    }
+
+    return data?.reply ?? 'No response from AI.'
 }
 
 

@@ -1,50 +1,18 @@
 // src/components/ChatBubble.jsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Renders a single chat message — either user or AI assistant.
-// Supports Markdown-like formatting: **bold**, `inline code`, ```code blocks```,
-// bullet lists, and line breaks.
+// Supports Markdown formatting with LaTeX and syntax highlighting.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Parse lightweight Markdown-like syntax into HTML.
- * Supports: **bold**, `code`, ```code block```, • bullets, line breaks.
- */
-function parseMarkdown(text) {
-    // Escape HTML first
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import rehypeHighlight from 'rehype-highlight'
 
-    // Fenced code blocks  ```lang\n...\n```
-    html = html.replace(
-        /```[\w]*\n?([\s\S]*?)```/g,
-        (_, code) =>
-            `<pre class="code-block"><code>${code.trim()}</code></pre>`
-    )
+import 'katex/dist/katex.min.css'
+import 'highlight.js/styles/github-dark.css'
 
-    // Inline code  `code`
-    html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
 
-    // Bold  **text**
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-
-    // Italic  *text*
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
-
-    // Headers ### text
-    html = html.replace(/^### (.+)$/gm, '<p class="font-bold text-base mt-3 mb-1">$1</p>')
-    html = html.replace(/^## (.+)$/gm, '<p class="font-bold text-base mt-3 mb-1">$1</p>')
-
-    // Bullet points  • or -
-    html = html.replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>')
-    html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul class="bullet-list">$1</ul>')
-
-    // Line breaks
-    html = html.replace(/\n/g, '<br/>')
-
-    return html
-}
 
 // ── Avatar components ──────────────────────────────────────────────────────────
 function AIAvatar() {
@@ -109,10 +77,14 @@ export default function ChatBubble({ role, content, senderName, avatarUrl, times
                 ) : (
                     /* AI bubble — card style with markdown */
                     <div className="bg-white dark:bg-slate-800 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm border border-slate-100 dark:border-slate-700 prose-bubble">
-                        <div
-                            className="text-sm leading-relaxed text-slate-700 dark:text-slate-300"
-                            dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
-                        />
+                        <div className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 prose dark:prose-invert max-w-none break-words prose-pre:my-1 prose-pre:p-2 prose-pre:bg-[#0d1117] prose-p:my-1 prose-ul:my-1 prose-ol:my-1">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkMath]}
+                                rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                            >
+                                {content}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                 )}
 

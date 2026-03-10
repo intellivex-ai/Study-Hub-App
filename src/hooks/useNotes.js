@@ -24,9 +24,9 @@ import {
  */
 export function useNotes({ subjectId, search } = {}) {
   const { user } = useAuth()
-  const [notes,   setNotes]   = useState([])
+  const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
+  const [error, setError] = useState(null)
 
   // Track the active note for the editor
   const [activeNoteId, setActiveNoteId] = useState(null)
@@ -72,10 +72,17 @@ export function useNotes({ subjectId, search } = {}) {
   /** Create a blank note and immediately select it. */
   const create = useCallback(async (opts = {}) => {
     if (!user) return
-    const note = await createNote({ userId: user.id, subjectId, ...opts })
-    setNotes((prev) => [note, ...prev])
-    setActiveNoteId(note.id)
-    return note
+    setError(null)
+    try {
+      const note = await createNote({ userId: user.id, subjectId, ...opts })
+      if (!note) throw new Error('Failed to create note (server returned empty)')
+      setNotes((prev) => [note, ...prev])
+      setActiveNoteId(note.id)
+      return note
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
   }, [user, subjectId])
 
   /**
@@ -110,6 +117,7 @@ export function useNotes({ subjectId, search } = {}) {
   }, [])
 
   return {
+    user,
     notes,
     loading,
     error,

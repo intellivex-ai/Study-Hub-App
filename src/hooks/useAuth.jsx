@@ -6,12 +6,14 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  signUp   as _signUp,
-  login    as _login,
-  logout   as _logout,
+  signUp as _signUp,
+  login as _login,
+  logout as _logout,
   loginWithOAuth as _oauth,
   getProfile,
   onAuthStateChange,
+  updateProfile as _updateProfile,
+  updatePassword as _updatePassword,
 } from '../services/authService'
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -19,9 +21,9 @@ const AuthContext = createContext(null)
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
-  const navigate  = useNavigate()
-  const [session, setSession]     = useState(undefined)  // undefined = loading
-  const [profile, setProfile]     = useState(null)
+  const navigate = useNavigate()
+  const [session, setSession] = useState(undefined)  // undefined = loading
+  const [profile, setProfile] = useState(null)
   const [authError, setAuthError] = useState(null)
 
   const isLoading = session === undefined
@@ -90,9 +92,20 @@ export function AuthProvider({ children }) {
     setProfile(p)
   }, [session])
 
+  const updateProfile = useCallback(async (updates) => {
+    if (!session?.user) return
+    const p = await _updateProfile(session.user.id, updates)
+    setProfile(p)
+    return p
+  }, [session])
+
+  const updatePassword = useCallback(async (newPassword) => {
+    await _updatePassword(newPassword)
+  }, [])
+
   const value = {
     // State
-    user:        session?.user ?? null,
+    user: session?.user ?? null,
     session,
     profile,
     isLoading,
@@ -104,6 +117,8 @@ export function AuthProvider({ children }) {
     loginWithOAuth,
     logout,
     refreshProfile,
+    updateProfile,
+    updatePassword,
     clearAuthError: () => setAuthError(null),
   }
 

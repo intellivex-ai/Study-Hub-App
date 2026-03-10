@@ -3,7 +3,7 @@
 // Controlled message input with quick-action chips and send button.
 // Supports Enter to send, Shift+Enter for newline.
 // ─────────────────────────────────────────────────────────────────────────────
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { QUICK_ACTIONS } from '../services/aiService'
 
 /**
@@ -16,6 +16,44 @@ import { QUICK_ACTIONS } from '../services/aiService'
  */
 export default function MessageInput({ value, onChange, onSend, loading, showActions }) {
     const textareaRef = useRef(null)
+    const [isListening, setIsListening] = useState(false)
+    const [recognitionInstance, setRecognitionInstance] = useState(null)
+
+    const toggleMic = () => {
+        if (isListening && recognitionInstance) {
+            recognitionInstance.stop()
+            return
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+        if (!SpeechRecognition) {
+            alert('Your browser does not support Speech Recognition.')
+            return
+        }
+
+        const recognition = new SpeechRecognition()
+        recognition.continuous = false
+        recognition.interimResults = false
+
+        recognition.onstart = () => setIsListening(true)
+        recognition.onend = () => {
+            setIsListening(false)
+            setRecognitionInstance(null)
+        }
+        recognition.onerror = (e) => {
+            console.error('Speech recognition error', e)
+            setIsListening(false)
+            setRecognitionInstance(null)
+        }
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript
+            const newValue = value + (value && !value.endsWith(' ') ? ' ' : '') + transcript
+            onChange({ target: { value: newValue } })
+        }
+
+        recognition.start()
+        setRecognitionInstance(recognition)
+    }
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -74,6 +112,21 @@ export default function MessageInput({ value, onChange, onSend, loading, showAct
                         }}
                     />
                 </div>
+
+                {/* Mic button */}
+                <button
+                    onClick={toggleMic}
+                    disabled={loading}
+                    title={isListening ? "Stop listening" : "Start speaking"}
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 ${isListening
+                            ? 'bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-500/30 animate-pulse'
+                            : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 active:scale-95 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed'
+                        }`}
+                >
+                    <span className="material-symbols-outlined text-xl">
+                        {isListening ? 'mic' : 'mic_none'}
+                    </span>
+                </button>
 
                 {/* Send button */}
                 <button

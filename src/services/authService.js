@@ -132,7 +132,7 @@ export const getProfile = async (userId) => {
     .from('users')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
   if (error) throw toError(error)
   return data
 }
@@ -144,7 +144,7 @@ export const updateProfile = async (userId, updates) => {
     .update(updates)
     .eq('id', userId)
     .select()
-    .single()
+    .maybeSingle()
   if (error) throw toError(error)
   return data
 }

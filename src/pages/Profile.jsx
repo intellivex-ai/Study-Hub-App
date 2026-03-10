@@ -1,45 +1,30 @@
-// src/pages/Profile.jsx — real Supabase data via useAuth() + useSubjects()
+// src/pages/Profile.jsx — Profile Pro with Glassmorphism & Achievements
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import gsap from 'gsap'
 import PageHeader from '../components/PageHeader'
 import ProgressBar from '../components/ProgressBar'
 import { useAuth } from '../hooks/useAuth'
 import { useSubjects } from '../hooks/useSubjects'
+import { useTheme } from '../hooks/useTheme'
 
-const menuItems = [
-  { icon: 'settings', label: 'Settings', to: '/settings', color: 'text-slate-600' },
-  { icon: 'notifications', label: 'Notifications', to: '/settings', color: 'text-slate-600' },
-  { icon: 'palette', label: 'Appearance', to: '/settings', color: 'text-slate-600' },
-  { icon: 'help', label: 'Help & Support', to: '/settings', color: 'text-slate-600' },
-  { icon: 'logout', label: 'Sign Out', to: '/login', color: 'text-red-500' },
+// Badge Definitions
+const BADGES = [
+  { id: 'early_bird', icon: 'wb_sunny', label: 'Early Bird', detail: 'Studied before 8AM', color: 'text-amber-500' },
+  { id: 'streak_3', icon: 'local_fire_department', label: '3 Day Streak', detail: 'Consistency is key', color: 'text-orange-500' },
+  { id: 'hour_10', icon: 'military_tech', label: '10h Scholar', detail: 'Deep focus master', color: 'text-blue-500' },
+  { id: 'quiz_hero', icon: 'workspace_premium', label: 'Quiz Hero', detail: '90%+ in 5 quizzes', color: 'text-emerald-500' },
 ]
-
-function resolveBarClass(colorHex = '#2563EB') {
-  const map = {
-    '#3b82f6': 'bg-blue-500',
-    '#10b981': 'bg-emerald-500',
-    '#f97316': 'bg-orange-500',
-    '#ec4899': 'bg-pink-500',
-    '#8b5cf6': 'bg-violet-500',
-    '#06b6d4': 'bg-cyan-500',
-  }
-  return map[colorHex] ?? 'bg-indigo-500'
-}
-
-function resolveIconClass(colorHex = '#2563EB') {
-  const map = {
-    '#3b82f6': 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
-    '#10b981': 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
-    '#f97316': 'text-orange-500 bg-orange-50 dark:bg-orange-900/20',
-    '#ec4899': 'text-pink-500 bg-pink-50 dark:bg-pink-900/20',
-    '#8b5cf6': 'text-violet-500 bg-violet-50 dark:bg-violet-900/20',
-    '#06b6d4': 'text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20',
-  }
-  return map[colorHex] ?? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-}
 
 export default function Profile() {
   const { user, profile, logout } = useAuth()
-  const { subjects, loading: subjectsLoading } = useSubjects()
+  const { subjects } = useSubjects()
+  const { theme, toggleTheme } = useTheme()
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    gsap.fromTo(containerRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" })
+  }, [])
 
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Student'
   const email = profile?.email || user?.email || ''
@@ -55,111 +40,172 @@ export default function Profile() {
   }
 
   return (
-    <div>
-      <PageHeader title="Profile" actions={
-        <Link to="/settings" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
-          <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">settings</span>
-        </Link>
+    <div ref={containerRef} className="max-w-6xl mx-auto p-4 space-y-8 pb-32">
+      <PageHeader title="Identity" actions={
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">Status</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        </div>
       } />
-      <div className="max-w-lg mx-auto p-4 space-y-5">
 
-        {/* Profile Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-card">
-          <div className="h-20 bg-gradient-to-r from-primary to-blue-400" />
-          <div className="px-5 pb-5">
-            <div className="flex items-end justify-between -mt-10 mb-4">
-              <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-900 shadow-lg overflow-hidden bg-primary flex items-center justify-center">
-                {avatarUrl
-                  ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-                  : <span className="text-white text-2xl font-bold">{initials}</span>
-                }
-              </div>
-              <Link to="/settings" className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-semibold hover:bg-primary/20 transition-colors">
-                <span className="material-symbols-outlined text-base">edit</span>
-                Edit
-              </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* ── Left Column: Personal Card & Settings ── */}
+        <div className="space-y-6">
+          <div className="glass-card rounded-[2rem] overflow-hidden group">
+            <div className="h-24 bg-gradient-to-br from-primary to-indigo-600 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] animate-pulse" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{displayName}</h2>
-            <p className="text-slate-500 text-sm">{email}</p>
-            <span className="inline-block mt-2 text-xs bg-primary/10 text-primary font-bold px-2 py-1 rounded-full">
-              {grade}
-            </span>
+            <div className="px-6 pb-8 text-center">
+              <div className="relative -mt-12 mb-4 mx-auto w-24 h-24">
+                <div className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-900 shadow-2xl overflow-hidden bg-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                    : <span className="text-white text-3xl font-black">{initials}</span>
+                  }
+                </div>
+                <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-white dark:bg-slate-800 shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined text-sm">photo_camera</span>
+                </button>
+              </div>
+
+              <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{displayName}</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{email}</p>
+
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <span className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider border border-primary/20">
+                  {grade}
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-orange-100/50 dark:bg-orange-900/20 text-orange-600 text-[10px] font-black uppercase tracking-wider border border-orange-200/50 dark:border-orange-800/30 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+                  {streak} Day Streak
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card p-6 rounded-[2rem] space-y-4">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">Appearance</h3>
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-primary/20 group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined">
+                    {theme === 'pookie' ? 'favorite' : theme === 'dark' ? 'dark_mode' : 'light_mode'}
+                  </span>
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">System Vibe</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">{theme}</p>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-slate-300">swap_horiz</span>
+            </button>
+            <Link to="/settings" className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-primary/20 group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-slate-500">
+                  <span className="material-symbols-outlined">settings</span>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Account Settings</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Profile & Security</p>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-slate-300">chevron_right</span>
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+            >
+              <span className="material-symbols-outlined">logout</span>
+              <span className="text-sm font-black uppercase tracking-widest">Sign Out</span>
+            </button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Study Hours', value: totalHours, icon: 'schedule', color: 'text-primary bg-blue-50 dark:bg-blue-900/20' },
-            { label: 'Subjects', value: subjects.length, icon: 'book', color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' },
-            { label: 'Day Streak', value: streak, icon: 'local_fire_department', color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' },
-          ].map((s) => (
-            <div key={s.label} className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-card text-center">
-              <div className={`w-10 h-10 rounded-full ${s.color} flex items-center justify-center mx-auto mb-2`}>
-                <span className="material-symbols-outlined text-lg">{s.icon}</span>
-              </div>
-              <p className="text-xl font-bold">{s.value}</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
-            </div>
-          ))}
-        </div>
+        {/* ── Mid/Right: Achievements & Knowledge ── */}
+        <div className="lg:col-span-2 space-y-8">
 
-        {/* Subject Progress */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-card">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-4">Subject Progress</h3>
-          {subjectsLoading && (
-            <div className="space-y-3 animate-pulse">
-              {[1, 2, 3].map((i) => <div key={i} className="h-8 bg-slate-100 dark:bg-slate-800 rounded-lg" />)}
-            </div>
-          )}
-          {!subjectsLoading && subjects.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-4">No subjects yet. Add subjects from the Subjects page.</p>
-          )}
-          <div className="space-y-3">
-            {subjects.map((s) => (
-              <div key={s.id} className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${resolveIconClass(s.color_hex)}`}>
-                  <span className="material-symbols-outlined text-base">{s.icon}</span>
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { icon: 'schedule', val: totalHours + 'h', label: 'Study Time', color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' },
+              { icon: 'auto_stories', val: subjects.length, label: 'Subjects', color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' },
+              { icon: 'verified', val: 'PRO', label: 'Account', color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' },
+            ].map((s, i) => (
+              <div key={i} className="glass-card p-6 rounded-3xl flex flex-col items-center text-center">
+                <div className={`w-12 h-12 rounded-2xl ${s.color} flex items-center justify-center mb-3`}>
+                  <span className="material-symbols-outlined text-2xl">{s.icon}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{s.name}</span>
-                    <span className="font-bold text-slate-600 dark:text-slate-400">{s.progress ?? 0}%</span>
-                  </div>
-                  <ProgressBar value={s.progress ?? 0} colorClass={resolveBarClass(s.color_hex)} />
-                </div>
+                <p className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none">{s.val}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Menu */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
-          {menuItems.map((item, i) => (
-            item.label === 'Sign Out'
-              ? (
-                <button
-                  key={item.label}
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <span className={`material-symbols-outlined ${item.color}`}>{item.icon}</span>
-                  <span className={`font-medium ${item.color}`}>{item.label}</span>
-                  <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
-                </button>
-              )
-              : (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className={`flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${i < menuItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
-                >
-                  <span className={`material-symbols-outlined ${item.color}`}>{item.icon}</span>
-                  <span className={`font-medium ${item.color}`}>{item.label}</span>
-                  <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
-                </Link>
-              )
-          ))}
+          {/* Achievement Badges */}
+          <section className="glass-card p-8 rounded-[2rem]">
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">emoji_events</span>
+              Achievements
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {BADGES.map((b) => (
+                <div key={b.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-transparent hover:border-primary/10 transition-all flex items-center gap-4 group">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm transition-transform group-hover:rotate-12 ${b.color}`}>
+                    <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>{b.icon}</span>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-slate-800 dark:text-slate-200 leading-tight">{b.label}</p>
+                    <p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-wider">{b.detail}</p>
+                  </div>
+                  <div className="ml-auto opacity-20">
+                    <span className="material-symbols-outlined text-xl">verified</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Knowledge Mastery */}
+          <section className="glass-card p-8 rounded-[2rem]">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">data_exploration</span>
+                Knowledge Flow
+              </h3>
+              <Link to="/analytics" className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline">Full Analytics</Link>
+            </div>
+
+            <div className="space-y-6">
+              {subjects.slice(0, 4).map((s) => (
+                <div key={s.id} className="group">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-sm">
+                        <span className="material-symbols-outlined text-lg">{s.icon || 'book'}</span>
+                      </div>
+                      <span className="font-bold text-slate-700 dark:text-slate-300 text-sm">{s.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-primary">{s.progress ?? 0}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-1000 ease-out"
+                      style={{ width: `${s.progress ?? 0}%`, boxShadow: '0 0 15px rgba(37,99,235,0.2)' }}
+                    />
+                  </div>
+                </div>
+              ))}
+              {subjects.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-sm font-medium text-slate-400 italic">Start studying to build your mastery flow.</p>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
       </div>

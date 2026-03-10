@@ -5,10 +5,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#2563EB',
-        'primary-dark': '#1d4ed8',
-        'bg-light': '#F5F7FB',
-        'bg-dark': '#111621',
+        primary: 'rgb(var(--primary) / <alpha-value>)',
+        'primary-dark': 'rgb(var(--primary-dark) / <alpha-value>)',
+        'bg-light': 'rgb(var(--bg-main) / <alpha-value>)',
+        'bg-dark': 'rgb(var(--bg-main) / <alpha-value>)',
       },
       fontFamily: {
         display: ['Lexend', 'sans-serif'],

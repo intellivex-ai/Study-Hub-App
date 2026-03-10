@@ -2,19 +2,34 @@
 import { useState } from 'react'
 import PageHeader from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
-import { saveQuizResult } from '../services/quizService'
-import { quizQuestions } from '../data/sampleData'
+import { saveQuizResult, getQuizQuestions } from '../services/quizService'
+import { useEffect } from 'react'
 
 export default function Practice() {
   const { user } = useAuth()
-  const [current,  setCurrent]  = useState(0)
+  const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState(null)
-  const [confirmed,setConfirmed]= useState(false)
-  const [score,    setScore]    = useState(0)
+  const [confirmed, setConfirmed] = useState(false)
+  const [score, setScore] = useState(0)
   const [finished, setFinished] = useState(false)
-  const [saving,   setSaving]   = useState(false)
-  const [startTime]= useState(Date.now())
-  const [answers,  setAnswers]  = useState([])
+  const [saving, setSaving] = useState(false)
+  const [quizQuestions, setQuizQuestions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [startTime] = useState(Date.now())
+  const [answers, setAnswers] = useState([])
+  useEffect(() => {
+    async function fetchQuestions() {
+      try {
+        const data = await getQuizQuestions('Quantum Mechanics Quiz')
+        setQuizQuestions(data)
+      } catch (err) {
+        console.error('Failed to load quiz questions:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchQuestions()
+  }, [])
 
   const q = quizQuestions[current]
   const isCorrect = selected === q.correct
@@ -48,6 +63,25 @@ export default function Practice() {
     }
   }
 
+  if (loading) return (
+    <div>
+      <PageHeader title="Practice Quiz" />
+      <div className="flex justify-center items-center py-20">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    </div>
+  )
+
+  if (quizQuestions.length === 0) return (
+    <div>
+      <PageHeader title="Practice Quiz" />
+      <div className="max-w-lg mx-auto p-20 text-center opacity-50">
+        <span className="material-symbols-outlined text-6xl mb-4">quiz</span>
+        <p>No questions found for this quiz.</p>
+      </div>
+    </div>
+  )
+
   const handleRestart = () => { setCurrent(0); setSelected(null); setConfirmed(false); setScore(0); setFinished(false); setAnswers([]) }
 
   if (finished) {
@@ -60,7 +94,7 @@ export default function Practice() {
           <div><h2 className="text-2xl font-bold">Quiz Complete!</h2><p className="text-slate-500 mt-1">You scored {score} out of {quizQuestions.length}</p></div>
           {saving && <p className="text-sm text-slate-400 flex items-center gap-2"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />Saving result…</p>}
           <div className="w-full grid grid-cols-3 gap-3">
-            {[{l:'Correct',v:score,c:'text-emerald-600'},{l:'Wrong',v:quizQuestions.length-score,c:'text-red-500'},{l:'Accuracy',v:`${pct}%`,c:'text-primary'}].map(s=>(
+            {[{ l: 'Correct', v: score, c: 'text-emerald-600' }, { l: 'Wrong', v: quizQuestions.length - score, c: 'text-red-500' }, { l: 'Accuracy', v: `${pct}%`, c: 'text-primary' }].map(s => (
               <div key={s.l} className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 text-center">
                 <p className={`text-2xl font-bold ${s.c}`}>{s.v}</p>
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{s.l}</p>
@@ -121,9 +155,9 @@ export default function Practice() {
         {!confirmed
           ? <button onClick={handleConfirm} disabled={selected === null} className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors">Confirm Answer</button>
           : <button onClick={handleNext} className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-              {current + 1 < quizQuestions.length ? 'Next Question' : 'View Results'}
-              <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
+            {current + 1 < quizQuestions.length ? 'Next Question' : 'View Results'}
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </button>
         }
       </div>
     </div>

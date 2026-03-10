@@ -19,7 +19,7 @@ const toError = (err) => (err instanceof Error ? err : new Error(err?.message ??
 export const getNotes = async ({ userId, subjectId, search } = {}) => {
   let query = supabase
     .from('notes')
-    .select('id, title, content, tags, is_pinned, subject_id, created_at, updated_at')
+    .select('id, title, content, tags, is_pinned, subject_id, created_at, updated_at, subjects(name, color_hex)')
     .eq('user_id', userId)
     .order('is_pinned', { ascending: false })
     .order('updated_at', { ascending: false })
@@ -43,9 +43,9 @@ export const getNotes = async ({ userId, subjectId, search } = {}) => {
 export const getNoteById = async (noteId) => {
   const { data, error } = await supabase
     .from('notes')
-    .select('*')
+    .select('*, subjects(name, color_hex)')
     .eq('id', noteId)
-    .single()
+    .maybeSingle()
   if (error) throw toError(error)
   return data
 }
@@ -72,8 +72,8 @@ export const createNote = async ({ userId, subjectId, title = 'Untitled Note', c
   const { data, error } = await supabase
     .from('notes')
     .insert({ user_id: userId, subject_id: subjectId, title, content, tags })
-    .select()
-    .single()
+    .select('*, subjects(name, color_hex)')
+    .maybeSingle()
   if (error) throw toError(error)
   logEvent(AnalyticsEvents.NOTE_CREATED, { subject_id: subjectId })
   return data
@@ -93,8 +93,8 @@ export const updateNote = async (noteId, updates) => {
     .from('notes')
     .update(updates)
     .eq('id', noteId)
-    .select()
-    .single()
+    .select('*, subjects(name, color_hex)')
+    .maybeSingle()
   if (error) throw toError(error)
   logEvent(AnalyticsEvents.NOTE_UPDATED)
   return data

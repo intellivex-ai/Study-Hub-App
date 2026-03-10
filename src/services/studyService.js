@@ -35,7 +35,7 @@ export const startSession = async ({ userId, subjectId, sessionType = 'focus', d
       started_at: new Date().toISOString(),
     })
     .select('id')
-    .single()
+    .maybeSingle()
   if (error) throw toError(error)
   logEvent(AnalyticsEvents.FOCUS_SESSION_START, { session_type: sessionType, duration_min: durationMin })
   return data.id
@@ -126,6 +126,23 @@ export const getWeeklySummary = async (userId) => {
   return Object.values(map)
 }
 
+/** Get total completed focus sessions for the current day. */
+export const getTodayFocusCount = async (userId) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { count, error } = await supabase
+    .from('study_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('session_type', 'focus')
+    .eq('completed', true)
+    .gte('started_at', today.toISOString())
+
+  if (error) return 0
+  return count ?? 0
+}
+
 // ── Private Helpers ───────────────────────────────────────────────────────────
 
 async function _incrementStudyMinutes(userId, minutes) {
@@ -146,14 +163,14 @@ async function _updateStreak(userId, now = new Date()) {
     .from('users')
     .select('streak, last_active')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (!user) return
 
   let newStreak = user.streak ?? 0
   if (user.last_active === today) return                  // already counted today
-  if (user.last_active === yest)  newStreak += 1          // consecutive day
-  else                            newStreak = 1           // streak broken
+  if (user.last_active === yest) newStreak += 1          // consecutive day
+  else newStreak = 1           // streak broken
 
   await supabase
     .from('users')

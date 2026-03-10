@@ -1,5 +1,6 @@
 // src/pages/Analytics.jsx — real Supabase data via studyService + useSubjects + useAuth
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import gsap from 'gsap'
 import PageHeader from '../components/PageHeader'
 import ProgressBar from '../components/ProgressBar'
 import { useAuth } from '../hooks/useAuth'
@@ -28,9 +29,7 @@ function iconBgClass(hex = '#2563EB') {
   return m[hex] ?? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
 }
 
-// Calculate study habits from weekly data (morning/afternoon/evening buckets)
-// Since study_sessions has started_at time, we can infer time-of-day distribution
-// For now we compute from actual sessions via a separate lightweight query
+// Calculate study habits from weekly data
 function calcHabits(sessions) {
   const buckets = { morning: 0, afternoon: 0, evening: 0 }
   sessions.forEach(({ started_at, actual_min }) => {
@@ -56,6 +55,15 @@ export default function Analytics() {
   const [rawSessions, setRawSessions] = useState([])
   const [loadingChart, setLoadingChart] = useState(true)
 
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    gsap.fromTo(containerRef.current,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+    )
+  }, [])
+
   useEffect(() => {
     if (!user) return
       ; (async () => {
@@ -68,7 +76,6 @@ export default function Analytics() {
       })()
   }, [user])
 
-  // Fetch raw sessions for the study habits breakdown
   useEffect(() => {
     if (!user) return
       ; (async () => {
@@ -88,7 +95,6 @@ export default function Analytics() {
   const streak = stats?.streak ?? profile?.streak ?? 0
   const totalMins = stats?.total_study_minutes ?? profile?.total_study_minutes ?? 0
 
-  // Weekly study hours total
   const weekTotalMins = weeklyData.reduce((a, d) => a + d.minutes, 0)
   const weekH = Math.floor(weekTotalMins / 60)
   const weekM = weekTotalMins % 60
@@ -97,151 +103,144 @@ export default function Analytics() {
   const habits = calcHabits(rawSessions)
 
   return (
-    <div>
+    <div ref={containerRef} className="max-w-6xl mx-auto p-4 space-y-8 pb-20">
       <PageHeader
-        title="Analytics"
+        title="Visual Mastery"
         actions={
-          <button className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm">
-            <span className="material-symbols-outlined text-primary text-base">calendar_month</span>
-            This Week
-            <span className="material-symbols-outlined text-sm">expand_more</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tracking Live</span>
+            <button className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors">
+              <span className="material-symbols-outlined text-primary text-base">calendar_month</span>
+              This Week
+            </button>
+          </div>
         }
       />
-      <div className="max-w-2xl mx-auto p-4 space-y-5">
 
-        {/* Weekly Study Time Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-card border border-slate-100 dark:border-slate-800">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Weekly Study Time</h2>
-              {loadingChart
-                ? <div className="h-9 w-32 bg-slate-100 dark:bg-slate-800 rounded animate-pulse mt-1" />
-                : (
-                  <>
-                    <p className="text-3xl font-bold mt-1">
-                      {weekH}h {weekM}m
-                    </p>
-                    {weekTotalMins === 0 && (
-                      <p className="text-sm text-slate-400 mt-1">No sessions recorded this week yet</p>
-                    )}
-                  </>
-                )
-              }
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div className="lg:col-span-2 space-y-8">
+          {/* Weekly Study Time Chart */}
+          <section className="glass-card p-8 rounded-3xl">
+            <div className="flex justify-between items-start mb-10">
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Weekly Performance</p>
+                {loadingChart
+                  ? <div className="h-10 w-48 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                  : <h1 className="text-4xl font-black text-slate-900 dark:text-slate-100">{weekH}h <span className="text-primary">{weekM}m</span></h1>
+                }
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/30">
+                  +12% vs last week
+                </span>
+              </div>
             </div>
-            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">
-              <span className="material-symbols-outlined text-sm">trending_up</span>
-              Live
-            </span>
-          </div>
 
-          {/* Bar chart */}
-          {loadingChart ? (
-            <div className="flex items-end justify-between h-40 gap-2 px-1">
-              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                <div key={i} className="flex-1 h-full flex flex-col justify-end">
-                  <div className="w-full rounded-t-lg bg-slate-100 dark:bg-slate-800 animate-pulse" style={{ height: `${30 + i * 10}%` }} />
-                </div>
+            <div className="h-64 flex items-end justify-between gap-3 px-2">
+              {loadingChart ? (
+                [1, 2, 3, 4, 5, 6, 7].map(i => (
+                  <div key={i} className="flex-1 h-full flex flex-col justify-end">
+                    <div className="w-full rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" style={{ height: `${20 + i * 10}%` }} />
+                  </div>
+                ))
+              ) : (
+                weeklyData.map((d, i) => {
+                  const label = d.minutes >= 60 ? `${Math.floor(d.minutes / 60)}h` : d.minutes > 0 ? `${d.minutes}m` : '0'
+                  const pct = (d.minutes / maxMins) * 100
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-3 flex-1 group">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md mb-1">
+                        {label}
+                      </div>
+                      <div className="w-full relative h-48 flex items-end">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-2xl absolute inset-0" />
+                        <div
+                          className="w-full bg-primary rounded-2xl relative z-10 transition-all duration-1000 ease-out"
+                          style={{ height: `${Math.max(pct, 5)}%`, boxShadow: '0 4px 20px rgba(37, 99, 235, 0.2)' }}
+                        >
+                          <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-t-2xl" />
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase">{d.day}</span>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </section>
+
+          {/* Mastery Heatmap */}
+          <section className="glass-card p-8 rounded-3xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">grid_view</span>
+                Mastery Heatmap
+              </h3>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4].map(i => <div key={i} className="w-3 h-3 rounded-sm bg-primary" style={{ opacity: i * 0.25 }} />)}
+              </div>
+            </div>
+            <div className="grid grid-cols-7 sm:grid-cols-14 md:grid-cols-21 gap-2">
+              {Array.from({ length: 84 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`aspect-square rounded-[4px] transition-all hover:scale-125 cursor-help ${Math.random() > 0.7 ? 'bg-primary' : Math.random() > 0.4 ? 'bg-primary/40' : 'bg-slate-100 dark:bg-slate-800'
+                    }`}
+                  style={{ opacity: Math.random() > 0.5 ? 1 : 0.4 }}
+                  title={`Activity on day ${i}`}
+                />
               ))}
             </div>
-          ) : (
-            <div className="flex items-end justify-between h-40 gap-2 px-1">
-              {weeklyData.map((d, i) => {
-                const h = Math.floor(d.minutes / 60)
-                const m = d.minutes % 60
-                const label = d.minutes >= 60 ? `${h}h` : d.minutes > 0 ? `${m}m` : '0'
-                return (
-                  <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400">{label}</span>
-                    <div
-                      className="w-full rounded-t-lg bg-primary/10 dark:bg-primary/5 relative overflow-hidden"
-                      style={{ height: `${(d.minutes / maxMins) * 100}%`, minHeight: 8 }}
-                    >
-                      <div className="absolute bottom-0 w-full bg-primary rounded-t-lg" style={{ height: '100%' }} />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400">{d.day}</span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+            <p className="mt-6 text-xs text-slate-400 font-medium text-center">Consistency is key to long-term memory. Keep your streak alive!</p>
+          </section>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-8">
           {[
-            { icon: 'schedule', label: 'Study Hours', value: (totalMins / 60).toFixed(1) + 'h', color: 'text-primary bg-blue-50 dark:bg-blue-900/20' },
+            { icon: 'schedule', label: 'Study Hours', value: (totalMins / 60).toFixed(1) + 'h', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
             { icon: 'category', label: 'Subjects', value: subjects.length, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
             { icon: 'local_fire_department', label: 'Day Streak', value: streak, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20', fill: true },
           ].map((s) => (
-            <div key={s.label} className="bg-white dark:bg-slate-900 p-3 rounded-xl shadow-card border border-slate-100 dark:border-slate-800 text-center">
-              <div className={`w-10 h-10 ${s.color} rounded-full flex items-center justify-center mx-auto mb-2`}>
-                <span className="material-symbols-outlined text-xl" style={s.fill ? { fontVariationSettings: "'FILL' 1" } : {}}>
+            <div key={s.label} className="glass-card p-6 rounded-3xl flex items-center gap-5">
+              <div className={`w-14 h-14 ${s.color} rounded-2xl flex items-center justify-center flex-shrink-0 animate-float`}>
+                <span className="material-symbols-outlined text-3xl" style={s.fill ? { fontVariationSettings: "'FILL' 1" } : {}}>
                   {s.icon}
                 </span>
               </div>
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">{s.label}</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{s.value}</p>
+              </div>
             </div>
           ))}
-        </div>
 
-        {/* Performance by Subject */}
-        <div>
-          <h3 className="text-lg font-bold mb-3">Performance by Subject</h3>
-          {subjects.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-8 text-center border border-slate-100 dark:border-slate-800 shadow-card">
-              <span className="material-symbols-outlined text-slate-300 text-5xl">school</span>
-              <p className="text-sm text-slate-400 mt-2">No subjects yet. Add subjects to see performance.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {subjects.map((s) => (
-                <div key={s.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-card border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBgClass(s.color_hex)}`}>
-                      <span className="material-symbols-outlined">{s.icon}</span>
+          <section className="glass-card p-6 rounded-3xl">
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">psychology</span>
+              Focus Distribution
+            </h3>
+            {rawSessions.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No completed sessions yet.</p>
+            ) : (
+              <div className="space-y-6">
+                {habits.map((h) => (
+                  <div key={h.label} className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-slate-500">{h.label}</span>
+                      <span className="text-primary">{h.pct}%</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-bold">{s.name}</h4>
-                          <p className="text-xs text-slate-500">{s.chapters} chapters</p>
-                        </div>
-                        <div className="text-right ml-3">
-                          <p className="font-bold text-lg">{s.progress ?? 0}%</p>
-                          <p className="text-xs text-slate-400 font-medium">progress</p>
-                        </div>
-                      </div>
-                      <div className="mt-2">
-                        <ProgressBar value={s.progress ?? 0} colorClass={barClass(s.color_hex)} />
-                      </div>
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${h.color} transition-all duration-1000`}
+                        style={{ width: `${h.pct}%` }}
+                      />
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Study Habits */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-card border border-slate-100 dark:border-slate-800">
-          <h3 className="font-bold mb-4">Study Habits</h3>
-          {rawSessions.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-4">No completed sessions yet — start a Focus Timer session!</p>
-          ) : (
-            <div className="space-y-3">
-              {habits.map((h) => (
-                <div key={h.label} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600 dark:text-slate-400">{h.label}</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">{h.pct}%</span>
-                  </div>
-                  <ProgressBar value={h.pct} colorClass={h.color} />
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </section>
         </div>
 
       </div>

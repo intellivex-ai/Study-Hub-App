@@ -7,6 +7,17 @@ import { logEvent, AnalyticsEvents } from './firebase'
 
 const toError = (err) => (err instanceof Error ? err : new Error(err?.message ?? 'Unknown error'))
 
+/** Fetch quiz questions for a specific title. */
+export const getQuizQuestions = async (title) => {
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select('questions')
+    .eq('title', title)
+    .maybeSingle()
+  if (error) throw toError(error)
+  return data?.questions ?? []
+}
+
 // ── Save Result ───────────────────────────────────────────────────────────────
 
 /**
@@ -49,23 +60,23 @@ export const saveQuizResult = async ({
   const { data, error } = await supabase
     .from('quiz_results')
     .insert({
-      user_id:         userId,
-      subject_id:      subjectId,
-      quiz_title:      quizTitle,
+      user_id: userId,
+      subject_id: subjectId,
+      quiz_title: quizTitle,
       total_questions: totalQuestions,
       correct_answers: correctAnswers,
-      time_taken_sec:  timeTakenSec,
+      time_taken_sec: timeTakenSec,
       answers,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) throw toError(error)
 
   const scorePct = Math.round((correctAnswers / totalQuestions) * 100)
   logEvent(AnalyticsEvents.QUIZ_COMPLETED, {
     quiz_title: quizTitle,
-    score_pct:  scorePct,
+    score_pct: scorePct,
     subject_id: subjectId,
   })
 
@@ -121,11 +132,11 @@ export const getAccuracyBySubject = async (userId) => {
   })
 
   return Object.values(grouped).map((g) => ({
-    subjectId:     g.subjectId,
-    subjectName:   g.subjectName,
-    colorHex:      g.color_hex,
-    icon:          g.icon,
-    avgScore:      Math.round(g.scores.reduce((a, b) => a + b, 0) / g.scores.length),
+    subjectId: g.subjectId,
+    subjectName: g.subjectName,
+    colorHex: g.color_hex,
+    icon: g.icon,
+    avgScore: Math.round(g.scores.reduce((a, b) => a + b, 0) / g.scores.length),
     totalAttempts: g.scores.length,
   }))
 }
@@ -144,7 +155,7 @@ export const getBestScore = async (userId, quizTitle) => {
     .eq('quiz_title', quizTitle)
     .order('score_pct', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (error) return null
   return data ? Math.round(Number(data.score_pct)) : null

@@ -2,13 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: 37 99 235;
+  /* #2563EB */
+  --primary-dark: 29 78 216;
+  --bg-main: 245 247 251;
+  --text-main: 15 23 42;
+}
+
+.dark {
+  --primary: 59 130 246;
+  --bg-main: 17 22 33;
+  --text-main: 248 250 252;
+}
+
+.theme-pookie {
+  --primary: 255 130 169;
+  /* #FF82A9 - Pookie Pink */
+  --primary-dark: 240 100 140;
+  --bg-main: 255 245 247;
+  /* #FFF5F7 - Very soft pink */
+  --text-main: 80 40 50;
+  /* Deep Rose text */
+}
+
 @layer base {
   body {
     font-family: 'Lexend', sans-serif;
-    @apply bg-bg-light text-slate-900;
-  }
-  .dark body {
-    @apply bg-bg-dark text-slate-100;
+    background-color: rgb(var(--bg-main));
+    color: rgb(var(--text-main));
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -16,6 +39,7 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -24,12 +48,34 @@
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #e2e8f0;
     border-radius: 10px;
+  }
+
+  .glass-card {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-slate-800/20 shadow-xl;
+  }
+
+  .glass-nav {
+    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border-b border-white/10 dark:border-slate-800/10;
+  }
+
+  .glass-sidebar {
+    @apply bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border-r border-white/5 dark:border-slate-800/5;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+  }
+
+  .dark .text-glow {
+    text-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
   }
 }
 
@@ -37,19 +83,23 @@
 .card-flip-container {
   perspective: 1000px;
 }
+
 .card-flip {
   transition: transform 0.6s;
   transform-style: preserve-3d;
   position: relative;
 }
+
 .card-flip.flipped {
   transform: rotateY(180deg);
 }
+
 .card-front,
 .card-back {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
 .card-back {
   transform: rotateY(180deg);
   position: absolute;
@@ -104,4 +154,3 @@
   font-size: 10px;
   top: 2px;
 }
-
