@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import Navbar from './Navbar'
 import BottomNav from './BottomNav'
+import NavigationProgress, { PageTransitionWrapper } from './NavigationProgress'
 
 export default function Layout() {
   const location = useLocation()
@@ -19,9 +20,12 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-slate-900 dark:text-slate-100 font-display">
+      <NavigationProgress />
       <Navbar />
       <main ref={mainRef} className="pb-32 pt-4">
-        <Outlet />
+        <PageTransitionWrapper>
+          <Outlet />
+        </PageTransitionWrapper>
       </main>
       <BottomNav />
     </div>
